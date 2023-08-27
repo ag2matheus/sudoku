@@ -17,6 +17,22 @@ extra-source-files:  README.md
 executable sudoku
   hs-source-dirs:      src
   main-is:             Main.hs
+  other-modules:       Solver, Generator
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Widentities
+                       -Wincomplete-record-updates
+                       -Wincomplete-uni-patterns
+                       -Wmissing-export-lists
+                       -Wmissing-home-modules
+                       -Wpartial-fields
+                       -Wredundant-constraints
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Solver, Generator
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
   ghc-options:         -Wall
