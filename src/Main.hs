@@ -1,6 +1,8 @@
 module Main (main) where
 
 import Definitions
+import PuzzleSorter
+import Transformer
 import Solver
 import Formatting
 
