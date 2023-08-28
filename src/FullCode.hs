@@ -106,38 +106,30 @@ resolveJogo =  buscarSolucoes . eliminarOpcoes . valoresPossiveis
 
 ---------------------- Import Formatting ---------------------
 -- Melhora o visual do tabuleiro
--- Printing Formated Table
 
--- Função para visualizar o tabuleiro com barras separando os grupos de 3 números
-visualizeBoard :: [String] -> String
-visualizeBoard board =
-    unlines $ separate [lineSeparator] groupedRows
+-- Caracteres Separadores
+divisoriaHorizontal :: String
+divisoriaHorizontal = replicate 11 '-'
+
+divisoriaVertical :: Char
+divisoriaVertical = '|'
+
+
+addDivisoria :: String -> String
+addDivisoria f = agregador [divisoriaVertical] grupos3
     where
-        groupedRows = chunksOf 3 formattedRows
-        formattedRows = map formatRow board
+        grupos3 = separa 3 f
 
--- Função para formatar uma linha com as barras separando os grupos de 3 números
-formatRow :: String -> String
-formatRow row = separate [cellSeparator] groupedCells
+agregador :: [a] -> [[a]] -> [a]
+agregador _ [x] = x
+agregador agg (x:xs) = x ++ agg ++ agregador agg xs
+
+gameFormatado :: [String] -> String
+gameFormatado sdk =
+    unlines $ agregador [divisoriaHorizontal] grupos3
     where
-        groupedCells = chunksOf 3 row
-
--- Separadores
-lineSeparator :: String
-lineSeparator = replicate 11 '-'
-
-cellSeparator :: Char
-cellSeparator = '|'
-
--- Função para dividir uma lista em grupos de tamanho n
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n xs = take n xs : chunksOf n (drop n xs)
-
--- Função de ajuda para juntar elementos de uma lista em uma string com separador
-separate :: [a] -> [[a]] -> [a]
-separate _ [x] = x
-separate sep (x:xs) = x ++ sep ++ separate sep xs
+        grupos3 = separa 3 agrupamentos
+        agrupamentos = map addDivisoria sdk
 
 gentle                :: Game
 gentle                =  [".1.42...5",
@@ -150,7 +142,40 @@ gentle                =  [".1.42...5",
                           "12.73.5..",
                           "3...82.7."]
 
+diabolical            :: Game
+diabolical            =  [".9.7..86.",
+                          ".31..5.2.",
+                          "8.6......",
+                          "..7.5...6",
+                          "...3.7...",
+                          "5...1.7..",
+                          "......1.9",
+                          ".2.6..35.",
+                          ".54..8.7."]
+
+teste :: Game
+teste = [".76..94.."
+        ,"...8.1..7"
+        ,"3....9..."
+        ,"61.3.7.8."
+        ,"...9...."
+        ,".2.1.8.34"
+        ,"5....6..."
+        ,"9..24...."
+        ,"..16.79.."]
+
+teste2 :: Game
+teste2 =["54.9....6","...2.7.8",".7.43...",".8....9.",".9.4.3..","6.2...5.","...21.8.","1.76....","8...4.27"]
+
+    --["540900006","000002708","070430000","080000901","009040300","602000050","000021080","107600000","800004027"]
+teste3 :: Game
+teste3 = [".6..7..8.","1.7...5.3",".5.1.4.9.","..1...8..","6..3.5..9",".342.671.","....2....","...9.7...","...6.1..."]
+
 main :: IO ()
 main = do
+    let puzzle = teste3
+        possibilidades = (length $ resolveJogo puzzle)
     putStrLn ("Este é o seu desafio, Boa Sorte!")
-    putStrLn (visualizeBoard $ head $ resolveJogo gentle)
+    putStrLn (gameFormatado $ puzzle)
+    putStrLn ("Esta é uma das " ++ show possibilidades ++ " solucoes possiveis!")
+    putStrLn (gameFormatado $ head $ resolveJogo puzzle)

@@ -18,4 +18,4 @@ gentle =  [".1.42...5",
 main :: IO ()
 main = do
     putStrLn ("Este é o seu desafio, Boa Sorte!")
-    putStrLn (visualizeBoard $ head $ resolveJogo gentle)
+    putStrLn (gameFormatado $ head $ resolveJogo gentle)

@@ -17,9 +17,11 @@ extra-source-files:  README.md
 executable sudoku
   hs-source-dirs:      src
   main-is:             Main.hs
-  other-modules:       Solver, Generator
+  other-modules:       Definitions, Solver, Formatting, GetPuzzle, Transformer
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                      , http-client >= 0.7 && < 0.8
+                      , http-conduit
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities
@@ -32,9 +34,11 @@ executable sudoku
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Solver, Generator
+  exposed-modules:     Solver
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                       , http-client >= 0.7 && < 0.8
+                       , http-conduit
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities

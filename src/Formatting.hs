@@ -1,34 +1,28 @@
-module Formatting (visualizeBoard) where
+module Formatting (gameFormatado) where
 
--- Printing Formated Table
+---------------------- Import Formatting ---------------------
+-- Melhora o visual do tabuleiro
 
--- Função para visualizar o tabuleiro com barras separando os grupos de 3 números
-visualizeBoard :: [String] -> String
-visualizeBoard board =
-    unlines $ separate [lineSeparator] groupedRows
+-- Caracteres Separadores
+divisoriaHorizontal :: String
+divisoriaHorizontal = replicate 11 '-'
+
+divisoriaVertical :: Char
+divisoriaVertical = '|'
+
+
+addDivisoria :: String -> String
+addDivisoria f = agregador [divisoriaVertical] grupos3
     where
-        groupedRows = chunksOf 3 formattedRows
-        formattedRows = map formatRow board
+        grupos3 = separa 3 f
 
--- Função para formatar uma linha com as barras separando os grupos de 3 números
-formatRow :: String -> String
-formatRow row = separate [cellSeparator] groupedCells
+agregador :: [a] -> [[a]] -> [a]
+agregador _ [x] = x
+agregador agg (x:xs) = x ++ agg ++ agregador agg xs
+
+gameFormatado :: [String] -> String
+gameFormatado sdk =
+    unlines $ agregador [divisoriaHorizontal] grupos3
     where
-        groupedCells = chunksOf 3 row
-
--- Separadores
-lineSeparator :: String
-lineSeparator = replicate 11 '-'
-
-cellSeparator :: Char
-cellSeparator = '|'
-
--- Função para dividir uma lista em grupos de tamanho n
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n xs = take n xs : chunksOf n (drop n xs)
-
--- Função de ajuda para juntar elementos de uma lista em uma string com separador
-separate :: [a] -> [[a]] -> [a]
-separate _ [x] = x
-separate sep (x:xs) = x ++ sep ++ separate sep xs
+        grupos3 = separa 3 agrupamentos
+        agrupamentos = map addDivisoria sdk
