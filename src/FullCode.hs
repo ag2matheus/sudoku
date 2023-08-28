@@ -1,5 +1,7 @@
 module FullCode (main) where
-import Data.List 
+import Data.List
+import System.Random
+import System.IO
 
 --------------- import Definitions --------------------
 -- Tipos criados
@@ -59,6 +61,45 @@ quadrados =  reagrupar . map colunas . agregar3
 separa :: Int -> [a] -> [[a]]
 separa n [] =  []
 separa n xs =  take n xs : separa n (drop n xs)
+
+------------------------------ Import Puzzle Sorter -----------------------------
+--recebe dificuldade, retorna o filepath
+setDificuldade :: String -> String
+setDificuldade d | d == "easy" = "puzzles/easy.txt"
+                 | d == "medium" = "puzzles/medium.txt"
+                 | d == "hard" = "puzzles/hard.txt" 
+                 | d == "diabolical" = "puzzles/diabolical.txt" 
+                                  
+-- Função para ler as linhas do arquivo e armazená-las em uma lista
+readLines :: FilePath -> IO [String]
+readLines arquivo = do
+    corpo <- readFile arquivo
+    return (lines corpo)
+
+--Função para sortear uma linha do arquivo (que contem o puzzle)
+sorteia :: String -> IO String
+sorteia dificuldade = do
+    lines <- readLines $ setDificuldade dificuldade
+    randomIndex <- randomRIO (0, length lines - 1)
+    let randomSudoku = lines !! randomIndex
+    return randomSudoku
+
+----------------------------- Import Transformer -----------------------------------------
+--separa no puzzle selecionado, apenas a parte que representa o sudoku
+selecionaJogo :: String -> [Value]
+selecionaJogo sdk = take 81 $ drop 13 sdk
+
+ajustaTipoVazio :: [Value] -> [Value]
+ajustaTipoVazio [] = []
+ajustaTipoVazio (x:xs)
+    | x == '0'  = '.' : ajustaTipoVazio xs
+    | otherwise = x : ajustaTipoVazio xs
+
+dividePuzzle :: [Value] -> Game
+dividePuzzle sdk = separa 9 $ ajustaTipoVazio $ sdk
+
+transforma :: String -> Game
+transforma jogo =  dividePuzzle $ selecionaJogo $ jogo
 
 
 --------------- Import Solver ----------------------------
@@ -171,11 +212,27 @@ teste2 =["54.9....6","...2.7.8",".7.43...",".8....9.",".9.4.3..","6.2...5.","...
 teste3 :: Game
 teste3 = [".6..7..8.","1.7...5.3",".5.1.4.9.","..1...8..","6..3.5..9",".342.671.","....2....","...9.7...","...6.1..."]
 
+---------------------- Programa rodando -----------------------------
 main :: IO ()
 main = do
+    putStrLn ("========================== Seja bem vindo ao Sudoko Solver! ==========================")
+    let dificuldade = "easy"
+    randomSudoku <- sorteia dificuldade
+    let puzzle = transforma randomSudoku
+        desafio = gameFormatado $ puzzle
+        solucoes = resolveJogo puzzle
+        possibilidades = length solucoes
+
+    putStrLn ("Este eh o Sudoku que vamos resolver - Nivel de dificuldade: "++ dificuldade ++"\n")
+    putStrLn desafio
+    putStrLn ("\nAqui está uma solução!")
+    putStrLn (gameFormatado $ head $ resolveJogo puzzle)
+    putStrLn ("============================== Obrigado! ==================================")
+    {-}
     let puzzle = teste3
         possibilidades = (length $ resolveJogo puzzle)
     putStrLn ("Este é o seu desafio, Boa Sorte!")
     putStrLn (gameFormatado $ puzzle)
     putStrLn ("Esta é uma das " ++ show possibilidades ++ " solucoes possiveis!")
     putStrLn (gameFormatado $ head $ resolveJogo puzzle)
+    -}

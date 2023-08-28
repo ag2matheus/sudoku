@@ -6,26 +6,30 @@ type Row a            = [a]
 type Choices          = [Value]
 type Value            = Char
 
+----------------------------- Import Transformer -----------------------------------------
+--separa no puzzle selecionado, apenas a parte que representa o sudoku
+selecionaJogo :: String -> [Value]
+selecionaJogo sdk = take 81 $ drop 13 sdk
+
 ajustaTipoVazio :: [Value] -> [Value]
 ajustaTipoVazio [] = []
 ajustaTipoVazio (x:xs)
     | x == '0'  = '.' : ajustaTipoVazio xs
     | otherwise = x : ajustaTipoVazio xs
 
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n xs = take n xs : chunksOf n (drop n xs)
+separa :: Int -> [a] -> [[a]]
+separa n [] =  []
+separa n xs =  take n xs : separa n (drop n xs)
 
 dividePuzzle :: [Value] -> Game
-dividePuzzle sdk = chunksOf 9 $ ajustaTipoVazio $ sdk
+dividePuzzle sdk = separa 9 $ ajustaTipoVazio $ sdk
 
 rawPuzzle :: [Value]
-rawPuzzle = "060070080107000503050104090001000800600305009034206710000020000000907000000601000"
+rawPuzzle = "ffca3f1df6fc 000072030060809040405000900750008000008000600000100027009000301030601090070940000  1.2"
 
 transform :: IO ()
 transform = do 
-    let puzzleLines = dividePuzzle rawPuzzle
-    mapM_ putStrLn puzzleLines
+    let puzzleLines = dividePuzzle $ selecionaJogo $ rawPuzzle
     print (puzzleLines)
 
 main :: IO ()

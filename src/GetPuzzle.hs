@@ -1,3 +1,5 @@
+module GetPuzzle (main) where
+
 import System.Random
 import Network.HTTP.Simple
 
