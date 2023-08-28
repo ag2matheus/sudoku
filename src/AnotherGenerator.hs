@@ -1,32 +1,29 @@
 module AnotherGenerator (test) where
 
 import System.Random
-
+import Data.Char
 type Grid             = Matrix Value
 type Matrix a         = [Row a]
 type Row a            = [a]
 type Value            = Char
 
-boxsize               :: Int
-boxsize               =  3
+test :: IO ()
+test = do
+    print(emptyGrid)
+    putStrLn (randomChar)
 
-values                :: [Value]
-values                =  ['1'..'9']
+emptyGrid :: Grid
+emptyGrid = replicate 9 (replicate 9 '.')
 
-empty                 :: Value -> Bool
-empty                 =  (== '.')
-
-single                :: [a] -> Bool
-single [_]            =  True
-single _              =  False
-
-emptyGrid :: [Char]
-emptyGrid = replicate 81 '.'
+randomChar :: IO Char
+randomChar = do
+    randomNum <- randomRIO (1, 9)
+    return (intToDigit randomNum) -- Sorteia um número entre 1 e 9
 
 -- ... Definições de rows, cols e boxs ...
 
 -- Função para inserir números aleatórios respeitando as regras do Sudoku
-insertRandomNumbers :: StdGen -> Int -> Grid -> Grid
+{-insertRandomNumbers :: StdGen -> Int -> Grid -> Grid
 insertRandomNumbers _ 0 grid = grid
 insertRandomNumbers gen n grid =
     if null emptyPositions
@@ -53,11 +50,5 @@ isAllowed grid pos value =
 -- Função para exibir o grid
 visualizeGrid :: Grid -> String
 visualizeGrid = unlines
+-}
 
-test :: IO ()
-test = do
-    rng <- newStdGen
-    let emptyGrid = replicate 9 (replicate 9 '.')
-        n = 20  -- Quantidade de números aleatórios a serem inseridos
-        finalGrid = insertRandomNumbers rng n emptyGrid
-    putStrLn (finalGrid)

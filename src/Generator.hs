@@ -1,110 +1,82 @@
-module Generator() where
+module Generator (generate) where
 
 import System.Random
-import Data.Set (Set, unions, fromList, member)
-import Data.Map (Map, singleton, elems, (!), insert)
-import Debug.Trace (trace)
-import Data.List (intercalate)
 
-main :: IO ()
-main = do
-    rng <- newStdGen
-    layout <- return (createRandomLayout rng 0.1)
-    --putStr (transformToListOfStrings layout)
-    print(transformToListOfStrings layout)
 
-transformToListOfStrings :: [Int] -> [String]
-transformToListOfStrings xs = replaceZeros $ map (intercalate "") (chunksOf 9 (map show xs))
-    where 
-        replaceZeros :: [String] -> [String]
-        replaceZeros = map (map (\c -> if c == '0' then '.' else c))
+-- Tipos
+type Grid = Matrix Value
+type Matrix a = [Row a]
+type Row a = [a]
+type Value = Char
 
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n xs = take n xs : chunksOf n (drop n xs)
+-- Basic definitions 
+-- -----------------
 
-join :: Show a => String -> [a] -> String
-join _   []     = ""
-join _   (x:[]) = show x
-join sep (x:xs) = show x ++ sep ++ join sep xs
+boxsize :: Int
+boxsize = 3
 
-fisherYatesStep :: RandomGen g => (Map Int a, g) -> (Int, a) -> (Map Int a, g)
-fisherYatesStep (m, gen) (i, x) =
-    ((insert j x . insert i (m ! j)) m, gen')
-    where (j, gen') = randomR (0, i) gen
- 
-fisherYates :: RandomGen g => g -> [a] -> ([a], g)
-fisherYates gen [] = ([], gen)
-fisherYates gen l = 
-    toElems $ foldl fisherYatesStep (initial (head l) gen) (numerate (tail l))
-    where
-        toElems (x, y) = (elems x, y)
-        numerate = zip [1..]
-        initial x gen = (singleton 0 x, gen)
+values :: [Value]
+values = ['1'..'9']
 
-posToIndex :: (Int, Int) -> Int
-posToIndex (r, c) = r * 8 + c
+empty :: Value -> Bool
+empty = (== '.')
 
-getItem :: [Int] -> (Int, Int) -> Int
-getItem layout pos = layout !! (posToIndex pos)
+single :: [a] -> Bool
+single [_] = True
+single _ = False
 
-getRow :: [Int] -> (Int, Int) -> [Int]
-getRow layout (r, _) = [getItem layout (r, i) | i <- [0..8]]
+-- Funções
 
-getColumn :: [Int] -> (Int, Int) -> [Int]
-getColumn layout (_, c) = [getItem layout (i, c) | i <- [0..8]]
+-- Função para criar um tabuleiro vazio
+emptyGrid :: Grid
+emptyGrid = replicate 9 (replicate 9 '.')
 
-getBox :: [Int] -> (Int, Int) -> [Int]
-getBox layout (r, c) =
-    [getItem layout (cr, cc) | cr <- [sr..sr+2], cc <- [sc..sc+2]]
-    where
-        getStart = \ i -> (i `quot` 3) * 3
-        sr = getStart r
-        sc = getStart c
+-- Função para imprimir um tabuleiro
+printGrid :: Grid -> IO ()
+printGrid = mapM_ putStrLn
 
-takenValues :: [Int] -> (Int, Int) -> Set Int
-takenValues layout pos =
-    unions (map fromList [getItems getRow, getItems getColumn, getItems getBox])
-    where
-        getItems = \ fn -> fn layout pos
+-- Função para verificar se um número é válido em uma posição específica do tabuleiro
+isValid :: Grid -> Position -> Char -> Bool
+isValid grid (row, col) num =
+  notElem num (getRow row) &&
+  notElem num (getCol col) &&
+  notElem num (getBox boxRow boxCol)
+  where
+    getRow r = grid !! r
+    getCol c = [grid !! r !! c | r <- [0..8]]
+    boxRow = row `div` 3
+    boxCol = col `div` 3
+    getBox r c = [grid !! i !! j | i <- [r*3..r*3+2], j <- [c*3..c*3+2]]
 
-isAllowed :: [Int] -> (Int, Int) -> Int -> Bool
-isAllowed layout pos v = not (v `member` (takenValues layout pos))
+-- Função para preencher uma célula no tabuleiro
+fillCell :: Grid -> Position -> Char -> Grid
+fillCell grid (row, col) num = 
+  take row grid ++
+  [take col (grid !! row) ++ num : drop (col + 1) (grid !! row)] ++
+  drop (row + 1) grid
 
-createRandomLayout :: StdGen -> Float -> [Int]
-createRandomLayout rng difficulty =
-    createLayout baseLayout indices candidateValues
-    where
-        taker = take 81
-        baseLayout = taker (repeat 0)
-        (allIndices, _) = fisherYates rng [(x, y) | x <- [1..8], y <- [1..8]]
-        numIndices = truncate (81 * (1.0 - difficulty))
-        indices = take numIndices allIndices
-        candidateValues = randomRs (1, 9) rng
+-- Função para gerar um tabuleiro solucionável aleatoriamente
+generateSolvableGrid :: StdGen -> Grid
+generateSolvableGrid gen = fillRandomCells emptyGrid 0
+  where
+    fillRandomCells :: Grid -> Int -> Grid
+    fillRandomCells grid count
+      | count >= 17 = grid
+      | otherwise =
+          let (row, newGen1) = randomR (0, 8) gen
+              (col, newGen2) = randomR (0, 8) newGen1
+              (num, newGen3) = randomR values newGen2
+          in if isValid grid (row, col) num
+             then fillRandomCells (fillCell grid (row, col) num) (count + 1)
+             else fillRandomCells grid count
 
-createLayout :: [Int] -> [(Int, Int)] -> [Int] -> [Int]
-createLayout layout [] _ = layout
-createLayout layout indices candidates =
-    createLayout newLayout (tail indices) newCandidates
-    where
-        index = head indices
-        (newLayout, newCandidates) = fillPosition layout candidates index 9
+-- Função para imprimir um tabuleiro solucionável gerado
+printSolvableGrid :: IO ()
+printSolvableGrid = do
+  gen <- newStdGen
+  let solvableGrid = generateSolvableGrid gen
+  printGrid solvableGrid
 
-fillPosition :: [Int] -> [Int] -> (Int, Int) -> Int -> ([Int], [Int])
-fillPosition layout candidates pos attempts
-    | attempts == 0 = (layout, candidates)
-    | isAllowed layout pos candidate = (replacePos layout pos candidate, restCandidates)
-    | otherwise = fillPosition layout restCandidates pos (attempts - 1)
-    where
-        candidate = head candidates
-        restCandidates = tail candidates
-
-replacePos :: [Int] -> (Int, Int) -> Int -> [Int]
-replacePos layout pos value =
-    [if curIndex == index then value else curValue | (curIndex, curValue) <- zip [0..] layout]
-    where index = posToIndex pos
-
-stringifyLayout :: [Int] -> String
-stringifyLayout layout =
-    join "\n" [join " " row | row <- rows]
-    where rows = [getRow layout (i, 0) | i <- [0..8]]
+-- Main
+generate :: IO ()
+generate = printSolvableGrid
